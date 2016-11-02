@@ -1,6 +1,6 @@
 ---
 title: "MATH 216 Homework 3"
-author: "WRITE YOUR NAME HERE"
+author: "Shannia Fu"
 output:
   html_document:
     toc: true
@@ -23,11 +23,11 @@ library(Quandl)
 
 Please indicate
 
-* Who you collaborated with:
-* Roughly how much time you spent on this HW so far:
-* The URL of the RPubs published URL [here](https://www.nhl.com/).
-* What gave you the most trouble:
-* Any comments you have:
+* Who you collaborated with: Bianca Gonzalez, Brenda Li
+* Roughly how much time you spent on this HW so far: 2.5 hours
+* The URL of the RPubs published URL [here](http://rpubs.com/shannia/hw3).
+* What gave you the most trouble: not getting enough directions...
+* Any comments you have: my knitted file says that the training accuracy is lower than the testing accuracy, but the opposite is true in my r console (despite set seed)
 
 
 
@@ -60,6 +60,8 @@ profiles <- read_csv(file="profiles.csv") %>%
   filter(!is.na(height)) %>% 
   mutate(is_female=ifelse(sex=='f', 1, 0)) %>% 
   tibble::rownames_to_column(var="id")
+profiles <- profiles %>% 
+  select(-contains("essay"))
 ```
 
 
@@ -82,6 +84,14 @@ to rate how well we performed.
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
 set.seed(76)
 
+profiles <- profiles %>% 
+  mutate(orientation = ifelse(is.na(orientation), "did not report", orientation)) %>% 
+  mutate(job = ifelse(is.na(job), "did not report", job))
+
+training_set <- profiles %>% 
+  sample_n(0.05*nrow(profiles))
+testing_set <- anti_join(profiles, training_set)
+
 ```
 
 
@@ -94,9 +104,21 @@ regression model to the `training` data. Assign this model to an R object called
 
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
 
+
+predict_sex_model <- glm(is_female~orientation+job, data=training_set, family="binomial")
+
+
+training_prediction <- training_set %>% 
+  select(id, orientation, job, is_female) %>% 
+  mutate(reg_per = fitted(predict_sex_model)) %>% 
+  mutate(prediction_female = ifelse(reg_per > 0.5, 1, 0)) %>% 
+  mutate(is_corr = ifelse (is_female==prediction_female, 1, 0))
+
+#mean(training_prediction$is_corr)
+
 ```
 
-
+The training accuracy is 66.00%.
 
 #### c)
 
@@ -107,20 +129,25 @@ for each users' sex, then rate how well the model performs on the `test` data.
 type="response")` does? The help file is located in `?predict.glm`
 
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
+testing_prediction <- testing_set %>% 
+  select(id, orientation, job, is_female) %>% 
+  mutate(prediction_female = predict(predict_sex_model, newdata=testing_set, type="response")) %>% 
+  mutate(prediction_female = ifelse(prediction_female > 0.5, 1, 0)) %>% 
+  mutate(is_corr = ifelse(prediction_female == is_female, 1, 0))
+
+mean(testing_prediction$is_corr)
 
 ```
 
-
+The testing accuracy is 64.65%.
 
 #### d)
 
 Did the model perform better on the `training` data or the `test` data? Why
 do you think that is?
 
-
-
-
-
+The model performed slightly better on the training data using sexual orientation and job as predictor variables. To be honest neither predictor was a good predictor, as on both the training set and the testing set the "accuracy" of the prediction was around 65%.
+The reason for this is probably that because the regression was modeled on the training set, it should perform better on the training set. However, given that the two accuracy levels were around the same, the randomly selected rows used to generate the regression were probably a good representative of the overall data.
 
 
 ## Question 2:
@@ -136,10 +163,28 @@ insight to a foreign currency exchanger.
 
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
 
+bitcoin <- Quandl("BAVERAGE/USD") %>% 
+  mutate(prev_day_value = lead(`24h Average`, k = 1)) %>% 
+  mutate(bvolatility = (`24h Average`-prev_day_value)/prev_day_value) %>% 
+  filter(!is.na(bvolatility))
+
+gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>%  
+  mutate(prev_day_value = lead(Value, k = 1)) %>% 
+  mutate(gvolatility = (Value-prev_day_value)/prev_day_value) %>% 
+  filter(!is.na(gvolatility))
+
+bg <- inner_join(bitcoin, gold, by="Date") %>% 
+  select(Date, bvolatility, gvolatility)
+
+bg_volatility <- ggplot() + geom_line(data = bg, aes(x=Date, y=bvolatility), color = "blue") +
+  geom_line(data = bg, aes(x=Date, y=gvolatility), color = "red")
+bg_volatility +
+  labs(title="Volatility of Gold and Bitcoin", x="Volatility by percentage", y="Date by Year")
+
 ```
 
 
-
+Gold is much more volatile on a day to day basis compared to bitcoin. My non-econ-educated advice would be to invest in bitcoin to be safe, unless you're very certain about the value growth of gold (insider trading?).
 
 
 ## Question 3:
@@ -178,9 +223,18 @@ the "graveyard shift" during the academic year? Define
 
 ```{r, echo=TRUE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
 
+newjuke <- jukebox %>% 
+  mutate(date_time = parse_date_time(date_time, "a m d HMS Y")) %>% 
+  filter(hour(date_time) >= 0 & hour(date_time) <= 8) %>% 
+  filter(month(date_time) >= 9 | month(date_time) <= 5) %>% 
+  group_by(artist) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  head(10) %>% 
+  knitr::kable()
+
 ```
 
-
-
+These are the top ten bands that played at Reed during the graveyard shift throughout the academic year.
 
 
