@@ -90,7 +90,7 @@ profiles <- profiles %>%
 
 training_set <- profiles %>% 
   sample_n(0.05*nrow(profiles))
-testing_set <- anti_join(profiles, training_set)
+testing_set <- anti_join(profiles, training_set, by="id")
 
 ```
 
@@ -165,26 +165,28 @@ insight to a foreign currency exchanger.
 
 bitcoin <- Quandl("BAVERAGE/USD") %>% 
   mutate(prev_day_value = lead(`24h Average`, k = 1)) %>% 
-  mutate(bvolatility = (`24h Average`-prev_day_value)/prev_day_value) %>% 
-  filter(!is.na(bvolatility))
+  mutate(volatility = (`24h Average`-prev_day_value)/prev_day_value) %>% 
+  filter(!is.na(volatility)) %>% 
+  mutate(type="Bitcoin")
 
 gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>%  
   mutate(prev_day_value = lead(Value, k = 1)) %>% 
-  mutate(gvolatility = (Value-prev_day_value)/prev_day_value) %>% 
-  filter(!is.na(gvolatility))
+  mutate(volatility = (Value-prev_day_value)/prev_day_value) %>% 
+  filter(!is.na(volatility)) %>% 
+  mutate(type="Gold")
 
-bg <- inner_join(bitcoin, gold, by="Date") %>% 
-  select(Date, bvolatility, gvolatility)
+bg <- bind_rows(gold, bitcoin) %>% 
+  filter(Date %within% interval(ymd("2010-07-18"), ymd("2016-10-31")))
 
-bg_volatility <- ggplot() + geom_line(data = bg, aes(x=Date, y=bvolatility), color = "blue") +
-  geom_line(data = bg, aes(x=Date, y=gvolatility), color = "red")
+bg_volatility <- ggplot(bg, aes(x=Date, y=volatility, col = type)) + geom_line()
 bg_volatility +
   labs(title="Volatility of Gold and Bitcoin", x="Volatility by percentage", y="Date by Year")
+
 
 ```
 
 
-Gold is much more volatile on a day to day basis compared to bitcoin. My non-econ-educated advice would be to invest in bitcoin to be safe, unless you're very certain about the value growth of gold (insider trading?).
+Bitcoin is much more volatile on a day to day basis compared to gold. My non-econ-educated advice would be to invest in gold to be safe, unless you're very certain about the value growth of bitcoin.
 
 
 ## Question 3:
