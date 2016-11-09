@@ -24,7 +24,7 @@ library(Quandl)
 Please indicate
 
 * Who you collaborated with: Bianca Gonzalez, Brenda Li
-* Roughly how much time you spent on this HW so far: 2.5 hours
+* Roughly how much time you spent on this HW so far: 2.75 hours
 * The URL of the RPubs published URL [here](http://rpubs.com/shannia/hw3).
 * What gave you the most trouble: not getting enough directions...
 * Any comments you have: my knitted file says that the training accuracy is lower than the testing accuracy, but the opposite is true in my r console (despite set seed)
