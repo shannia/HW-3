@@ -114,7 +114,7 @@ training_prediction <- training_set %>%
   mutate(prediction_female = ifelse(reg_per > 0.5, 1, 0)) %>% 
   mutate(is_corr = ifelse (is_female==prediction_female, 1, 0))
 
-#mean(training_prediction$is_corr)
+mean(training_prediction$is_corr)
 
 ```
 
@@ -149,6 +149,7 @@ do you think that is?
 The model performed slightly better on the training data using sexual orientation and job as predictor variables. To be honest neither predictor was a good predictor, as on both the training set and the testing set the "accuracy" of the prediction was around 65%.
 The reason for this is probably that because the regression was modeled on the training set, it should perform better on the training set. However, given that the two accuracy levels were around the same, the randomly selected rows used to generate the regression were probably a good representative of the overall data.
 
+(Post-Submission Edit-I ran it with the set.seed(76) line again and the results changed once again--the testing set still tested lower than than the training set, even though it favored the testing set slightly when we did the trials during our discussion.)
 
 ## Question 2:
 
@@ -178,9 +179,9 @@ gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>%
 bg <- bind_rows(gold, bitcoin) %>% 
   filter(Date %within% interval(ymd("2010-07-18"), ymd("2016-10-31")))
 
-bg_volatility <- ggplot(bg, aes(x=Date, y=volatility, col = type)) + geom_line()
+bg_volatility <- ggplot(bg, aes(x=Date, y=volatility*100, col = type)) + geom_line()
 bg_volatility +
-  labs(title="Volatility of Gold and Bitcoin", x="Volatility by percentage", y="Date by Year")
+  labs(title="Volatility of Gold and Bitcoin", x="Date by Year", y="Volatility by Percentage")
 
 
 ```
@@ -232,8 +233,9 @@ newjuke <- jukebox %>%
   group_by(artist) %>% 
   count() %>% 
   arrange(desc(n)) %>% 
-  head(10) %>% 
-  knitr::kable()
+  head(10)
+
+knitr::kable(newjuke)
 
 ```
 
